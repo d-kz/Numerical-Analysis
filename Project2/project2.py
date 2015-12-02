@@ -2,8 +2,6 @@ import math
 import matplotlib.pyplot as plt
 import random
 
-def guessU5():
-    return -0.1
 
 def rk4(q1, q2, q3, q4, q5, h, Pr, timeMax):
     t = 0.0
@@ -72,24 +70,15 @@ def U5prime(t, q1, q5, Pr):
     return -Pr/2.0 * q1 * q5
 
 
-def part1F():
-    u3 = 0.332056861162 # error =  -9.90517633026e-07
+def part1F(h, u1, u2, u3, u4, u5, t, Pr):
     change = [u3, float("inf")]
     while abs(change[1] - change[0]) > 0.00000001:
-        h = 0.1
-        u1 = 0
-        u2 = 0
-        u4 = 1
-        u5 = guessU5()
-        Pr = 5
-        t = 30
         points = rk4(u1, u2, u3, u4, u5, h, Pr, t)
         change[0] = u3
-        #forceCheck = len(points[2]) - int(random.random() * (50)) - 1
-        forceCheck = len(points[2]) - 1
-        u3 += -0.01 * (points[2][forceCheck] - 1) 
+        lastEl = len(points[2]) - 1
+        u3 += -0.01 * (points[2][lastEl] - 1) #gradient descent'ish
         change[1] = u3
-        print "for {}, change of u:{} ERROR: {}, forceCheck{}".format(u3, (change[1] - change[0]), points[2][-1] - 1, forceCheck)
+        print "for {}, change of u:{} ERROR: {}".format(u3, (change[1] - change[0]), points[2][-1] - 1)
     
     plt.plot(points[0], points[1], '#ED5377', label="F")
     plt.plot(points[0], points[2], '#FF0000', label="F\'")
@@ -98,36 +87,38 @@ def part1F():
     plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
     plt.show()
 
-    return [points[1], points[2], points[0]]
 
-def part1G():
-    u5 = -0.576687846345 # ERROR: -1.21703629796e-32
+def part1G(h, u1, u2, u3, u4, u5, t, Pr):
     change = [u5, 0]
     while abs(change[1] - change[0]) > 0.00000001:
-        h = 0.1
-        u1 = 0
-        u2 = 0
-        u3 = 0.332056861162
-        u4 = 1
-        Pr = 5
-        t = 30
+        print "hello"
         points = rk4(u1, u2, u3, u4, u5, h, Pr, t)
         change[0] = u5
-        #forceCheck = len(points[2]) - int(random.random() * (50)) - 1
-        forceCheck = len(points[5]) - 1
-        u5 += -0.01 * (points[4][forceCheck]) 
+        u5 += -0.01 * (points[4][100]) 
         change[1] = u5
-        print "for {}, change of u:{} ERROR: {}, forceCheck{}".format(u5, (change[1] - change[0]), points[5][-1], forceCheck)
+        print "for {}, change of u:{} ERROR: {}".format(u5, (change[1] - change[0]), points[5][-1])
 
-    plt.title('Graphs of G, G\'')
+    plt.title('Graphs of v, u\'')
     plt.plot(points[0], points[4], '#004746', label="G")
     plt.plot(points[0], points[5], '#799493', label="G\'")
     plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
     plt.show()
 
-    return [points[4], points[5], points[0]]
+    return [points[1], points[2], points[0], points[4]]
 
 #PART2
+
+def findAsymptote(yValues, tplot, h):
+    der = [0.0, 0.0]
+    timeOfAsymptote = 0.0
+    for i in range(0,len(yValues) - 1):
+        der[0] = yValues[i]
+        der[1] = yValues[i + 1]
+        if abs(der[1] - der[0])/h < 0.001:
+            timeOfAsymptote = i
+            break
+
+    return timeOfAsymptote*0.1
 
 def velocities(f, fPrime, tPoints):
     t = 0.0
@@ -146,18 +137,62 @@ def velocities(f, fPrime, tPoints):
         tplot.append(t)
         t += h
 
-    plt.title('Dimensionless Velocities of G, G\'')
+    asymptote = findAsymptote(V2plot, tplot, h)
+    print "asymptote", asymptote
+    plt.axvline(x=asymptote ,color='k',ls='dashed')
+    plt.title('Dimensionless Velocities of v, u')
     plt.plot(tPoints, V1plot, '#ED5377', label="v/Uinf * (x*Re/L)**(1.0/2.0)") 
     plt.plot(tPoints, V2plot, '#004746', label="u/Uinf")
+
+    plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+    plt.show()
+
+    return asymptote
+
+def tempPlot(G, tPoints):
+    h = 0.1
+    asymptote = findAsymptote(G, tPoints, h)
+    print "asymptote", asymptote
+    plt.axvline(x=asymptote ,color='k',ls='dashed')
+    plt.title('Dimensionless temperature as a function of n')
+    plt.plot(tPoints, G, '#ED5377', label="G") 
+    plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+    plt.show()
+
+    return asymptote
+
+def prandtlPlot(h, u1, u2, u3, u4, u5, t):
+    Pr = [0.2, 2.0, 5.0, 10.0]
+    nt = []
+    for i, pr in enumerate(Pr):
+        f, fprime, tPoints, g = part1G(h, u1, u2, u3, u4, u5, t, pr)
+        nt.append(findAsymptote(g, tPoints, h))
+        print "for {} nt is : {}".format(pr, nt[i])
+
+    plt.title('Graph of nt vs Prandtle Number')
+    plt.plot(Pr, nt, '#ED5377', label="G") 
     plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
     plt.show()
 
 if __name__ == '__main__':
+    h = 0.1 
+    u1 = 0
+    u2 = 0
+    u3 = 0.332056861162 # ERROR : -9.90517633026e-07
+    u4 = 1
+    u5 = -0.576687846345 # ERROR: -1.21703629796e-32
+    t = 20
+    Pr = 1
     print "part 1, graphs of F:"
-    f, fprime, t = part1F()
+    #part1F(h, u1, u2, u3, u4, u5, t, Pr)
     print "part 1, graphs of G:"
-    g, gprime, t = part1G()
+    f, fprime, tPoints, g = part1G(h, u1, u2, u3, u4, u5, t, Pr)
     print "part 2"
-    velocities(f, fprime, t)
+    #print "nm is : {}".format(velocities(f, fprime, tPoints))
+    print "part 3"
+    #print "nt is : {}".format(tempPlot(g, tPoints))
+
+    print "part 6"
+    prandtlPlot(h, u1, u2, u3, u4, u5, t)
 
 
