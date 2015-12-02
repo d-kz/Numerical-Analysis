@@ -94,7 +94,7 @@ def part1G(h, u1, u2, u3, u4, u5, t, Pr):
         print "hello"
         points = rk4(u1, u2, u3, u4, u5, h, Pr, t)
         change[0] = u5
-        u5 += -0.01 * (points[4][100]) 
+        u5 += -0.01 * (points[4][100])  #gradient descent'ish, top at 100, because u5 explodes in RK-4 with small values
         change[1] = u5
         print "for {}, change of u:{} ERROR: {}".format(u5, (change[1] - change[0]), points[5][-1])
 
@@ -184,13 +184,13 @@ if __name__ == '__main__':
     t = 20
     Pr = 1
     print "part 1, graphs of F:"
-    #part1F(h, u1, u2, u3, u4, u5, t, Pr)
+    part1F(h, u1, u2, u3, u4, u5, t, Pr)
     print "part 1, graphs of G:"
     f, fprime, tPoints, g = part1G(h, u1, u2, u3, u4, u5, t, Pr)
     print "part 2"
-    #print "nm is : {}".format(velocities(f, fprime, tPoints))
+    print "nm is : {}".format(velocities(f, fprime, tPoints))
     print "part 3"
-    #print "nt is : {}".format(tempPlot(g, tPoints))
+    print "nt is : {}".format(tempPlot(g, tPoints))
 
     print "part 6"
     prandtlPlot(h, u1, u2, u3, u4, u5, t)
