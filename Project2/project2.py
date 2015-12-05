@@ -84,32 +84,36 @@ def part1F(h, u1, u2, u3, u4, u5, t, Pr):
     plt.plot(points[0], points[2], '#FF0000', label="F\'")
     plt.plot(points[0], points[3], '#FFB8B9', label="F\'\'")
     plt.title('Graphs of F, F\', F\'\'')
-    plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+    plt.xlabel('$\eta_t$')
+    plt.legend(bbox_to_anchor=(0., 1), loc=2, borderaxespad=0.)
     plt.show()
 
 
 def part1G(h, u1, u2, u3, u4, u5, t, Pr):
     change = [u5, 0]
     while abs(change[1] - change[0]) > 0.00000001:
-        print "hello"
         points = rk4(u1, u2, u3, u4, u5, h, Pr, t)
         change[0] = u5
-        u5 += -0.01 * (points[4][100])  #gradient descent'ish, top at 100, because u5 explodes in RK-4 with small values
+        if Pr == 0.2:
+            u5 += -0.01 * (points[4][250])
+        else:
+            u5 += -0.01 * (points[4][100])  #gradient descent'ish, top at 100, because u5 explodes in RK-4 with small values
         change[1] = u5
         print "for {}, change of u:{} ERROR: {}".format(u5, (change[1] - change[0]), points[5][-1])
 
-    plt.title('Graphs of v, u\'')
+    plt.title(str(Pr) + '   Graphs of v, u\'')
     plt.plot(points[0], points[4], '#004746', label="G")
     plt.plot(points[0], points[5], '#799493', label="G\'")
-    plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+    plt.xlabel('$\eta_t$')
+    plt.legend(bbox_to_anchor=(0., 1), loc=2, borderaxespad=0.)
     plt.show()
 
     return [points[1], points[2], points[0], points[4]]
 
 #PART2
 
-def findAsymptote(yValues, tplot, h):
-    der = [0.0, 0.0]
+def findAsymptote(yValues, tplot, h, type):
+    '''der = [0.0, 0.0]
     timeOfAsymptote = 0.0
     for i in range(0,len(yValues) - 1):
         der[0] = yValues[i]
@@ -117,8 +121,24 @@ def findAsymptote(yValues, tplot, h):
         if abs(der[1] - der[0])/h < 0.001:
             timeOfAsymptote = i
             break
+    '''
+    if type == 'F':
+        check = 0.97
+    elif type == "G":
+        check = 0.03
+    else:
+        print "you didn't pass the parameter"
 
-    return timeOfAsymptote*0.1
+    for i in range(0,len(yValues) - 1):
+        if type == 'F':
+            if yValues[i] > 0.97:
+                return i*0.1
+        elif type == "G":
+            if yValues[i] < 0.03:
+                return i*0.1
+            
+
+    return 0
 
 def velocities(f, fPrime, tPoints):
     t = 0.0
@@ -137,26 +157,29 @@ def velocities(f, fPrime, tPoints):
         tplot.append(t)
         t += h
 
-    asymptote = findAsymptote(V2plot, tplot, h)
+    asymptote = findAsymptote(V2plot, tplot, h, 'F')
     print "asymptote", asymptote
     plt.axvline(x=asymptote ,color='k',ls='dashed')
     plt.title('Dimensionless Velocities of v, u')
     plt.plot(tPoints, V1plot, '#ED5377', label="v/Uinf * (x*Re/L)**(1.0/2.0)") 
     plt.plot(tPoints, V2plot, '#004746', label="u/Uinf")
-
-    plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+    plt.ylabel('Velocities')
+    plt.xlabel('$\eta_t$')
+    plt.legend(bbox_to_anchor=(0., 1), loc=2, borderaxespad=0.)
     plt.show()
 
     return asymptote
 
 def tempPlot(G, tPoints):
     h = 0.1
-    asymptote = findAsymptote(G, tPoints, h)
+    asymptote = findAsymptote(G, tPoints, h, 'G')
     print "asymptote", asymptote
     plt.axvline(x=asymptote ,color='k',ls='dashed')
     plt.title('Dimensionless temperature as a function of n')
-    plt.plot(tPoints, G, '#ED5377', label="G") 
-    plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+    plt.plot(tPoints, G, '#ED5377', label="G")
+    plt.ylabel('G($\eta_t$)')
+    plt.xlabel('$\eta_t$')
+    plt.legend(bbox_to_anchor=(0., 1), loc=2, borderaxespad=0.)
     plt.show()
 
     return asymptote
@@ -166,13 +189,40 @@ def prandtlPlot(h, u1, u2, u3, u4, u5, t):
     nt = []
     for i, pr in enumerate(Pr):
         f, fprime, tPoints, g = part1G(h, u1, u2, u3, u4, u5, t, pr)
-        nt.append(findAsymptote(g, tPoints, h))
+        nt.append(findAsymptote(g, tPoints, h, 'G'))
         print "for {} nt is : {}".format(pr, nt[i])
 
     plt.title('Graph of nt vs Prandtle Number')
     plt.plot(Pr, nt, '#ED5377', label="G") 
-    plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+    plt.ylabel('$\eta_t$')
+    plt.xlabel('Prandtle Number')
+    plt.legend(bbox_to_anchor=(0., 1), loc=2, borderaxespad=0.)
     plt.show()
+
+    return nt
+
+def momentumPlots(nm, ntArray, x):
+    tMomentums =  [[] for x in range(5)]
+    momentum = []
+    prNames = [0.2, 2, 5, 10]
+    plt.title('Boundary Layer Thickness vs. Distance on Plate')
+    for i, nt in enumerate(ntArray):
+        for t in tPoints:
+            tMomentums[i].append(ntArray[i]*(t**(1.0/2.0)))
+        lbl = "Thermal Layer - Pr: " + str(prNames[i])
+        lw = 1.0 + i/1.5
+        lines = plt.plot(tPoints, tMomentums[i], label=lbl)
+        plt.setp(lines,  color='#F02957', linewidth=lw)
+
+    for t in tPoints:
+            momentum.append(nm*(t**(1.0/2.0)))
+    plt.plot(tPoints, momentum, 'g--', label="Momentum Layer")
+    plt.xlabel(r'$\frac{x}{L}$')
+    plt.ylabel(r'$\frac{\delta}{L} \sqrt{Re}$')
+    plt.legend(bbox_to_anchor=(0., 1), loc=2, borderaxespad=0.)
+    plt.show()
+
+
 
 if __name__ == '__main__':
     h = 0.1 
@@ -180,19 +230,24 @@ if __name__ == '__main__':
     u2 = 0
     u3 = 0.332056861162 # ERROR : -9.90517633026e-07
     u4 = 1
-    u5 = -0.576687846345 # ERROR: -1.21703629796e-32
+    u5 = 0.2 # ERROR: -1.21703629796e-32
     t = 20
-    Pr = 1
+    Pr = 5
     print "part 1, graphs of F:"
-    part1F(h, u1, u2, u3, u4, u5, t, Pr)
+    #part1F(h, u1, u2, u3, u4, u5, t, Pr)
     print "part 1, graphs of G:"
     f, fprime, tPoints, g = part1G(h, u1, u2, u3, u4, u5, t, Pr)
     print "part 2"
-    print "nm is : {}".format(velocities(f, fprime, tPoints))
+    nm = velocities(f, fprime, tPoints)
+    print "nm is : {}".format(nm)
     print "part 3"
-    print "nt is : {}".format(tempPlot(g, tPoints))
+    #nt = tempPlot(g, tPoints)
+    #print "nt is : {}".format(nt)
 
     print "part 6"
-    prandtlPlot(h, u1, u2, u3, u4, u5, t)
-
+    t = 30
+    #ntArray = prandtlPlot(h, u1, u2, u3, u4, u5, t)
+    print "part 5"
+    #print ntArray
+    momentumPlots(nm, [8.1, 3.4000000000000004, 2.5, 2.0], tPoints) #we will just reuse tPoints array for plotting function of x
 
